@@ -247,13 +247,14 @@ int main(int argc, char* argv[]) {
 #ifdef USE_VECTORS
 			// Get the rest of division by 32 and add that to a total file size for SIMD operations
 			// uint8_t leftover = sz % 32;
-			uint8_t leftover = (uint8_t)(sz - (uint64_t)(sz * 0.03125 + 0.015625));
+			uint8_t leftover = sz - (sz >> 5);
+			// 
 			const auto totale = sz + 32 - leftover;
 			// Create string for input
 			string str(totale, 32 - leftover);
 #else
 			// Same as for SIMD
-			uint8_t leftover = sz % 8;
+			uint8_t leftover = sz - (sz >> 3);
 			const auto totale = sz + 8 - leftover;
 			string str(totale, 8 - leftover);
 #endif // USE_VECTORS
