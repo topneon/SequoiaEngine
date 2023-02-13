@@ -1,3 +1,6 @@
+// SeqCrypter - crypter for SequoiaEngine
+
+// Includes
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -7,10 +10,14 @@
 
 #define USE_VECTORS
 
+// Uncomment if you want to measure operation time
+// #define MEASURE_TIME
+
 // #ifdef USE_VECTORS
 #include <immintrin.h>
 // #endif // USE_VECTORS
 
+// Version
 #define MAJOR 2
 #define MINOR 0
 
@@ -20,6 +27,7 @@
 // -l = limit per pack
 // -u = unpack
 
+// Defined constants
 #define ENCRYPT 0xE
 #define DECRYPT 0xD
 #define PACK 0xAB
@@ -29,11 +37,13 @@
 
 #define INVERT_XOR 0xFFFFFFFFFFFFFFFF
 
+// No need for anything else than std
 using namespace std;
 
 __m256i oxia, oxib, oxic, oxid;
 __m256i oxa, oxb, oxc, oxd;
 
+// Standard Endless Left BitShift 
 uint64_t MoveLeft(uint64_t a, uint8_t shift) {
 	uint64_t b = a >> (64 - shift);
 	a <<= shift;
@@ -41,6 +51,7 @@ uint64_t MoveLeft(uint64_t a, uint8_t shift) {
 	return a;
 }
 
+// SIMD Endless Left BitShift (4 versions for a, b, c, d options)
 __m256i MoveLeftA(__m256i a) {
 	auto b = _mm256_srlv_epi64(a, oxia);
 	a = _mm256_sllv_epi64(a, oxa);
@@ -69,12 +80,14 @@ __m256i MoveLeftD(__m256i a) {
 	return a;
 }
 
+// Standard Endless Left BitShift by reference
 void MoveLeft(uint64_t* a, uint8_t shift) {
 	uint64_t b = *a >> (64 - shift);
 	*a <<= shift;
 	*a ^= b;
 }
 
+// Standard Endless Right BitShift
 uint64_t MoveRight(uint64_t a, uint8_t shift) {
 	uint64_t b = a << (64 - shift);
 	a >>= shift;
@@ -82,6 +95,7 @@ uint64_t MoveRight(uint64_t a, uint8_t shift) {
 	return a;
 }
 
+// SIMD Endless Right BitShift (4 versions for a, b, c, d options)
 __m256i MoveRightA(__m256i a) {
 	auto b = _mm256_sllv_epi64(a, oxia);
 	a = _mm256_srlv_epi64(a, oxa);
@@ -110,26 +124,37 @@ __m256i MoveRightD(__m256i a) {
 	return a;
 }
 
+// Standard Endless Right BitShift by reference
 void MoveRight(uint64_t* a, uint8_t shift) {
 	uint64_t b = *a << (64 - shift);
 	*a >>= shift;
 	*a ^= b;
 }
 
+// XOR Mask (use 2 times to unmask)
 uint64_t XORMake(uint64_t a, uint64_t mask) {
 	return a ^ mask;
 }
 
+// Same, but by reference
 void XORMake(uint64_t* a, uint64_t mask) {
 	*a ^= mask;
 }
 
+// Inverted XOR
 uint64_t XORInv(uint64_t a, uint64_t mask) {
 	return a ^ (mask ^ INVERT_XOR);
 }
 
+// Maybe used in future
+union DataSplitter {
+	char data[32];
+	uint8_t udata[32];
+	int64_t split[4];
+};
+
 int main(int argc, char* argv[]) {
-	// help
+	// Display help if no arguments
 	if (argc < 2) {
 		std::cout << "SeqoCrypt " << MAJOR << "." << MINOR << endl;
 		std::cout << "\t-d \tdecrypt\n";
@@ -137,15 +162,17 @@ int main(int argc, char* argv[]) {
 		std::cout << "\t-p \tpack\n";
 		std::cout << "\t-l \tlimit per pack\n";
 		std::cout << "\t-u \tunpack\n";
+		std::cout << "\tex.\tcrypter\t[args]\t[in_path]\t[out_path]";
 		cin.get();
 		return 0;
 	}
 
+	// Default values
 	uint8_t crypter = DONTCRYPT;
 	uint8_t packer = DONTPACK;
 	uint32_t limiter = 0x40000000; // IN BYTES
 
-	// arguments
+	// Loop through arguments, set the values
 	for (auto i = 1; i < argc - 2; i++) {
 		switch (argv[i][1]) {
 		case 'D':
@@ -171,16 +198,21 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	// path for input and output
 	std::string in = argv[argc - 2];
 	std::string out = argv[argc - 1];
 
-	const string imageTypes[8] = { "png", "jpg", "jpeg", "tga", "tiff", "bmp", "heif", "raw" };
+	// unnecessary, leave for future
+	/*
+	const string imageTypes[8] = {"png", "jpg", "jpeg", "tga", "tiff", "bmp", "heif", "raw"};
 	const string modelTypes[4] = { "gltf", "glb", "fbx", "obj" };
 	const string type = "seq";
 	const string pack = "lab";
+	*/
+	//
 
-	//std::cout << (int)crypter << " " << (int)packer;
 #ifdef USE_VECTORS
+	// prepare vectors for SIMD operations
 	auto decade = _mm256_set1_epi64x(0xDECADE);
 	auto football = _mm256_set1_epi64x(0xF007BA11);
 	auto deadbeef = _mm256_set1_epi64x(0xDEADBEEF);
@@ -200,29 +232,44 @@ int main(int argc, char* argv[]) {
 #endif // USE_VECTORS
 
 	if (packer == DONTPACK) {
-		// make SIMD later
+
+		// ENCRYPTION
 		if (crypter == ENCRYPT) {
+#ifdef MEASURE_TIME
+			// time measurement start
 			auto arbeit = (uint64_t)(chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count());
+#endif
+			// Open file in binary mode
 			ifstream file(in, ios::binary);
+			// File size
 			const auto sz = filesystem::file_size(in);
 			//std::cout << "Left: " << (int)leftover << " File_size: " << sz << endl;
 #ifdef USE_VECTORS
-			uint8_t leftover = sz % 32;
+			// Get the rest of division by 32 and add that to a total file size for SIMD operations
+			// uint8_t leftover = sz % 32;
+			uint8_t leftover = (uint8_t)(sz - (uint64_t)(sz * 0.03125 + 0.015625));
 			const auto totale = sz + 32 - leftover;
+			// Create string for input
 			string str(totale, 32 - leftover);
 #else
+			// Same as for SIMD
 			uint8_t leftover = sz % 8;
 			const auto totale = sz + 8 - leftover;
 			string str(totale, 8 - leftover);
 #endif // USE_VECTORS
+			// Read data to string
 			file.read(str.data(), sz);
 			file.close();
 			auto data = str.data();
+			// Size in 64bit ints
 			const auto len = (size_t)(str.size() * 0.125 + 0.5);
 			// std::cout << " len: " << len << endl;
 #ifdef USE_VECTORS
+			// Represent byte buffer in 64bit ints buffer
 			auto datat = reinterpret_cast<int64_t*>(data);
+			// Crypt each 64 bit field with XOR, ADD, Bitshift and more
 			for (auto i = 0; i < len; i += 4) {
+				// Load into vector
 				auto mm = _mm256_loadu_epi64(&datat[i]);
 				mm = _mm256_xor_si256(mm, decade);
 				mm = _mm256_add_epi64(mm, football);
@@ -237,8 +284,10 @@ int main(int argc, char* argv[]) {
 				mm = MoveRightD(mm);
 				mm = _mm256_add_epi64(mm, idea);
 				_mm256_store_si256((__m256i*)(&datat[i]), mm);
+				// Store after encryption
 			}
 #else
+			// Same process as for SIMD
 			auto datat = reinterpret_cast<uint64_t*>(data);
 			for (auto i = 0; i < len; i++) {
 				auto mm = datat[i];
@@ -257,24 +306,36 @@ int main(int argc, char* argv[]) {
 				datat[i] = mm;
 			}
 #endif // USE_VECTORS
+			// Represent 64bit int buffer as byte buffer
 			auto datafinal = reinterpret_cast<char*>(datat);
+			// Open output file as binary and save it there
 			ofstream ofile(out, ios::binary);
 			ofile.write(datafinal, totale);
 			ofile.close();
-			std::cout << (chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() - arbeit) * 0.001 << "ms";
+#ifdef MEASURE_TIME
+			// time measurement output
+			const auto gg = (chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() - arbeit) * 0.001;
+			std::cout << gg << "ms";
+#endif
 		}
 
 		if (crypter == DECRYPT) {
+#ifdef MEASURE_TIME
+			// time measurement start
 			auto arbeit = (uint64_t)(chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count());
+#endif
+			// Open encrypted file, get its size, make string and read it in there, get length in 64bit ints
 			ifstream file(in, ios::binary);
 			const auto sz = filesystem::file_size(in);
 			std::string str(sz, '\0');
 			file.read(str.data(), sz);
 			file.close();
 			auto data = str.data();
-			const auto len = (size_t)(str.size() * 0.125 + 0.5);
+			const auto siz3 = str.size();
+			const auto len = (size_t)(siz3 * 0.125 + 0.5);
 			// std::cout << " len: " << len << endl;
 #ifdef USE_VECTORS
+			// Represent as 64bit ints buffer and decrypt each 64bit with reversed process
 			auto datat = reinterpret_cast<int64_t*>(data);
 			for (auto i = 0; i < len; i += 4) {
 				auto mm = _mm256_loadu_epi64(&datat[i]);
@@ -293,6 +354,7 @@ int main(int argc, char* argv[]) {
 				_mm256_store_si256((__m256i*)(&datat[i]), mm);
 			}
 #else
+			// Basically the same but with no SIMD
 			auto datat = reinterpret_cast<uint64_t*>(data);
 			for (auto i = 0; i < len; i++) {
 				auto mm = datat[i];
@@ -311,19 +373,29 @@ int main(int argc, char* argv[]) {
 				datat[i] = mm;
 			}
 #endif // USE_VECTORS
+			// Get the final data as byte buffer
 			auto datafinal = reinterpret_cast<char*>(datat);
-			const auto leftover = (uint8_t)(datafinal[str.size() - 1]);
+			const auto leftover = (uint8_t)(datafinal[siz3 - 1]);
 			// std::cout << "Left: " << (int)leftover << endl;
-			const auto totallenfinal = str.size() - leftover;
+			// Save only the real bytes, without fillups to an output file
+			const auto totallenfinal = siz3 - leftover;
 			ofstream ofile(out, ios::binary);
 			ofile.write(datafinal, totallenfinal);
 			ofile.close();
-			std::cout << (chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() - arbeit) * 0.001 << "ms";
+#ifdef MEASURE_TIME
+			// time measurement output
+			const auto gg = (chrono::duration_cast<chrono::microseconds>(chrono::system_clock::now().time_since_epoch()).count() - arbeit) * 0.001;
+			std::cout << gg << "ms";
+#endif
 		}
 
 		if (crypter == DONTCRYPT) {
 
 		}
+	}
+
+	if (packer == PACK) {
+		// not implemented yet
 	}
 
 	return 0;
