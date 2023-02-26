@@ -300,6 +300,7 @@ namespace seq {
 				crypter = ENCRYPT;
 				packer = DONTPACK;
 			}
+			out = std::string((char*)pather.u8string().c_str());
 		}
 
 		// unnecessary, leave for future
