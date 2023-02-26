@@ -147,6 +147,9 @@
   <ItemGroup>
     <ClCompile Include="crypter.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="crypter.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -5,6 +5,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
 	seq::Application app{};
 	app.Run(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-	// delete app;
 	return 0;
 }
