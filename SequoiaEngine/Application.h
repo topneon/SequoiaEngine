@@ -3,6 +3,7 @@
 #include "structs.h"
 #include "statics.h"
 #include "Object.h"
+#include "Entity.h"
 
 namespace seq {
 	class Application : public Object

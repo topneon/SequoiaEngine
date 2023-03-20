@@ -201,8 +201,34 @@ namespace seq {
 
 		// draw the initial gray window
 		deviceContext->ClearRenderTargetView(renderTargetView, clearColor);
-		// Meshes
+		// Set Topology
 		deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ);
+		// Cube
+		Vertex cube[]{
+			{ -1.0f, 1.0f, -1.0f },    // vertex 0
+			{ 1.0f, 1.0f, -1.0f },     // vertex 1
+			{ -1.0f, -1.0f, -1.0f },   // 2
+			{ 1.0f, -1.0f, -1.0f },  // 3
+			{ -1.0f, 1.0f, 1.0f },     // ...
+			{ 1.0f, 1.0f, 1.0f },
+			{ -1.0f, -1.0f, 1.0f },
+			{ 1.0f, -1.0f, 1.0f }
+		};
+		Indice indices[]{
+			0, 1, 2,    // side 1
+			2, 1, 3,
+			4, 0, 6,    // side 2
+			6, 0, 2,
+			7, 5, 6,    // side 3
+			6, 5, 4,
+			3, 1, 7,    // side 4
+			7, 1, 5,
+			4, 5, 0,    // side 5
+			0, 5, 1,
+			3, 7, 2,    // side 6
+			2, 7, 6,
+		};
+		//DirectX::XMMatrixLookAtRH()
 		swapChain->Present(1, 0);
 	}
 

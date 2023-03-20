@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Entity.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Transformer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Input.h" />
@@ -150,6 +151,7 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Entity.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Transformer.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />

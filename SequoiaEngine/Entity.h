@@ -1,11 +1,13 @@
 #pragma once
 #include "Object.h"
 #include "Transformer.h"
+#include "Mesh.h"
 
 namespace seq { 
 	class Entity : public Object
 	{
 		Transformer* transform;
+		Mesh* mesh;
 	public:
 		Entity();
 		~Entity();
