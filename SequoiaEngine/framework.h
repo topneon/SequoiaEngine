@@ -23,7 +23,7 @@
 #include <ppltasks.h>
 #if RENDERER_METHOD == 0x11
 #pragma comment(lib, "d3d11")
-#include <d3d11.h>
+#include <d3d11_4.h>
 #endif
 #pragma comment(lib, "DXGI")
 #include <DirectXMath.h>
@@ -31,3 +31,4 @@
 #include <thread>
 #include <chrono>
 #include <optional>
+#include <d3dcompiler.h>

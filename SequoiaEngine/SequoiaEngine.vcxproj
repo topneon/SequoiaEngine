@@ -136,6 +136,7 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Shortcuts.h" />
     <ClInclude Include="Transformer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Input.h" />
@@ -163,6 +164,12 @@
   <ItemGroup>
     <Image Include="SequoiaEngine.ico" />
     <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="basic.fx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="lib\Effects11.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
